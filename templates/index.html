@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAN Chat App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --primary-color: #7289da;
+            --bg-dark: #36393f;
+            --sidebar-dark: #2f3136;
+            --text-light: #dcddde;
+            --text-gray: #8e9297;
+            --hover-color: #40444b;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--text-light);
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-dark);
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Login Form */
+        #username-form {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .login-container {
+            background: var(--sidebar-dark);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-container h2 {
+            margin-bottom: 25px;
+            color: var(--text-light);
+            font-size: 24px;
+        }
+
+        #username {
+            padding: 12px 20px;
+            width: 300px;
+            background: var(--bg-dark);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+
+        #username:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(114, 137, 218, 0.3);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-dark);
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar h3 {
+            color: var(--text-light);
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar h3 i {
+            color: var(--primary-color);
+        }
+
+        #users-list {
+            list-style: none;
+        }
+
+        #users-list li {
+            padding: 12px 15px;
+            margin: 5px 0;
+            background: var(--hover-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        #users-list li:hover {
+            background: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        #users-list li::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #43b581;
+            border-radius: 50%;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        #chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat-box::-webkit-scrollbar-thumb {
+            background: var(--hover-color);
+            border-radius: 4px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            max-width: 70%;
+        }
+
+        .message.received {
+            background: var(--hover-color);
+            align-self: flex-start;
+        }
+
+        .message.sent {
+            background: var(--primary-color);
+            align-self: flex-end;
+        }
+
+        .message .timestamp {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        /* Message Input */
+        .message-input {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: var(--hover-color);
+            border-radius: 12px;
+            align-items: center;
+        }
+
+        #message {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            background: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        #message:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        /* Buttons */
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #5b6eae;
+            transform: translateY(-2px);
+        }
+
+        button i {
+            font-size: 16px;
+        }
+
+        /* System Messages */
+        .system-message {
+            text-align: center;
+            color: var(--text-gray);
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .mobile-header {
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .container {
+                padding-top: 60px; /* Height of mobile header */
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 60px;
+                bottom: 0;
+                width: 280px;
+                z-index: 999;
+                transition: all 0.3s ease;
+                background: var(--sidebar-dark);
+            }
+
+            .sidebar.active {
+                left: 0;
+                box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+            }
+
+            .chat-area {
+                width: 80%;
+                margin-left: 0;
+                padding: 10px;
+            }
+
+            #chat-box {
+                padding: 10px;
+            }
+
+            .message {
+                max-width: 85%;
+                margin-bottom: 10px;
+            }
+
+            .message-input {
+                padding: 10px;
+                margin: 0 10px 10px 10px;
+            }
+
+            /* Hide sidebar by default on mobile */
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            /* Adjust message input area */
+            .message-input {
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+
+            /* Make buttons more touch-friendly */
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* Adjust file upload button */
+            .file-upload button {
+                padding: 10px;
+            }
+        }
+
+        /* Even smaller screens */
+        @media (max-width: 480px) {
+            .message {
+                max-width: 90%;
+            }
+
+            .message-input {
+                padding: 8px;
+            }
+
+            button {
+                padding: 8px 16px;
+            }
+        }
+
+        /* File Upload Styling */
+        .file-upload {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-upload-input {
+            display: none;
+        }
+
+        .file-message {
+            background: var(--hover-color);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            max-width: 400px;
+        }
+
+        .file-message a {
+            color: var(--primary-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .file-message a:hover {
+            text-decoration: underline;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--hover-color);
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .file-upload-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--sidebar-dark);
+            padding: 20px;
+            border-radius: 12px;
+            z-index: 1000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .file-upload-dialog h3 {
+            margin-bottom: 15px;
+        }
+
+        .file-upload-dialog textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--hover-color);
+            min-height: 80px;
+        }
+
+        .file-preview {
+            margin: 15px 0;
+            padding: 10px;
+            background: var(--hover-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-preview i {
+            font-size: 24px;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .file-message {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-message-text {
+            margin-top: 5px;
+            padding: 8px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .video-preview {
+            max-width: 100%;
+            margin: 10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-preview video {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+        }
+
+        .video-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .video-message {
+            background: var(--hover-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .file-type-badge {
+            background: var(--primary-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .video-thumbnail {
+            position: relative;
+            width: 300px;
+            height: 180px;
+            background: var(--hover-color);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .video-thumbnail i.fa-play-circle {
+            font-size: 50px;
+            color: white;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .video-thumbnail:hover i.fa-play-circle {
+            opacity: 1;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: var(--hover-color);
+            border-radius: 6px;
+            margin: 5px 0;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* Image preview styling */
+        .image-preview {
+            position: relative;
+            margin: 10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            display: block;
+        }
+
+        /* PDF preview styling */
+        .pdf-preview {
+            background: var(--bg-dark);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+        }
+
+        .pdf-preview i {
+            font-size: 40px;
+            color: #ff4444;
+        }
+
+        .pdf-info {
+            flex: 1;
+        }
+
+        .pdf-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        /* File actions styling */
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .file-btn {
+            padding: 8px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: var(--text-light) !important;
+        }
+
+        .file-btn i {
+            font-size: 16px;
+            color: var(--text-light);
+            display: inline-block;
+        }
+
+        .download-btn {
+            background: var(--hover-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .download-btn:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .preview-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .file-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* Lightbox for images */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90vh;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        /* Make sure Font Awesome is properly loaded */
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+        .logout-btn {
+            margin-top: auto;
+            background: var(--hover-color);
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #dc3545;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Add these styles */
+        .reply-container {
+            background: var(--hover-color);
+            padding: 8px 12px;
+            border-left: 4px solid var(--primary-color);
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .reply-header {
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .message {
+            position: relative;
+        }
+
+        .message-actions {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+
+        .reply-btn {
+            background: transparent;
+            padding: 4px 8px;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        .reply-btn:hover {
+            background: var(--hover-color);
+        }
+
+        .replying-to {
+            background: var(--hover-color);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .cancel-reply {
+            cursor: pointer;
+            padding: 4px 8px;
+            color: var(--text-gray);
+        }
+
+        .cancel-reply:hover {
+            color: var(--text-light);
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            background: var(--sidebar-dark);
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-header h3 {
+            color: var(--text-light);
+            font-size: 18px;
+        }
+
+        #sidebar-toggle {
+            padding: 8px;
+            background: transparent;
+            color: var(--text-light);
+        }
+
+        #sidebar-toggle:hover {
+            background: var(--hover-color);
+            transform: none;
+        }
+
+        /* Update Responsive Design */
+        @media (max-width: 768px) {
+            .mobile-header {
+                display: flex;
+            }
+
+            .container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                margin-top: 60px;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 60px;
+                bottom: 0;
+                width: 280px;
+                transition: left 0.3s ease;
+                z-index: 99;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .chat-area {
+                width: 100%;
+                padding: 10px;
+            }
+
+            /* Message styling for mobile */
+            .message {
+                max-width: 85%;
+                padding: 10px 15px;
+            }
+
+            .message-input {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+
+            /* File message adjustments */
+            .file-message {
+                max-width: 85%;
+            }
+
+            .file-actions {
+                flex-wrap: wrap;
+            }
+
+            .file-btn {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            /* Image preview adjustments */
+            .image-preview img {
+                max-height: 200px;
+            }
+
+            /* PDF preview adjustments */
+            .pdf-preview {
+                padding: 10px;
+            }
+
+            /* Video preview adjustments */
+            .video-thumbnail {
+                width: 100%;
+                height: 160px;
+            }
+        }
+
+        /* Additional mobile optimizations */
+        @media (max-width: 480px) {
+            .message {
+                max-width: 90%;
+                font-size: 14px;
+            }
+
+            .file-message {
+                max-width: 90%;
+            }
+
+            .message-input button {
+                padding: 10px;
+            }
+
+            .message-input button span {
+                display: none;
+            }
+
+            .file-actions {
+                gap: 5px;
+            }
+        }
+
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            /* Reset container for mobile */
+            .container {
+                height: 100vh;
+                width: 100vw;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            /* Mobile Header */
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                background: var(--sidebar-dark);
+                padding: 15px;
+                height: 65px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            }
+
+            .mobile-header button {
+                background: transparent;
+                padding: 8px;
+                font-size: 24px;
+            }
+
+            .mobile-header h3 {
+                font-size: 20px;
+                margin-left: 15px;
+            }
+
+            /* Sidebar for mobile */
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 65px;
+                bottom: 0;
+                width: 85%;
+                z-index: 999;
+                transition: 0.3s ease;
+                background: var(--sidebar-dark);
+            }
+
+            .sidebar.active {
+                left: 0;
+                box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+            }
+
+            /* Users list styling */
+            #users-list li {
+                padding: 15px;
+                font-size: 16px;
+            }
+
+            /* Chat area for mobile */
+            .chat-area {
+                margin-top: 65px;
+                height: calc(100vh - 65px);
+                padding: 10px;
+                background: var(--bg-dark);
+            }
+
+            /* Chat messages */
+            #chat-box {
+                padding: 10px;
+                margin-bottom: 70px;
+            }
+
+            .message {
+                max-width: 85%;
+                padding: 12px 16px;
+                margin-bottom: 12px;
+                font-size: 16px;
+            }
+
+            .message strong {
+                font-size: 15px;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            .message .timestamp {
+                font-size: 12px;
+                margin-top: 5px;
+            }
+
+            /* Message input area */
+            .message-input {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 15px;
+                background: var(--sidebar-dark);
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                border-top: 1px solid rgba(255,255,255,0.1);
+            }
+
+            #message {
+                height: 45px;
+                font-size: 16px;
+                padding: 12px 15px;
+            }
+
+            .message-input button {
+                height: 45px;
+                width: 45px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+            }
+
+            /* File upload button */
+            .file-upload button {
+                background: transparent;
+                color: var(--text-light);
+            }
+
+            /* Reply styling */
+            .replying-to {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            /* File messages */
+            .file-message {
+                max-width: 85%;
+                margin: 10px 0;
+            }
+
+            .file-actions {
+                gap: 8px;
+            }
+
+            .file-btn {
+                font-size: 15px;
+                padding: 10px 15px;
+            }
+
+            /* System messages */
+            .system-message {
+                font-size: 14px;
+                padding: 8px 0;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 320px) {
+            .message {
+                max-width: 90%;
+            }
+
+            .message-input {
+                padding: 10px;
+            }
+        }
+
+        /* Add these styles */
+        .main-header {
+            background: var(--primary-color);
+            padding: 15px;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Add this right after body tag, before username-form -->
+    <div class="mobile-header">
+        <button id="sidebar-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h3>Chat Room</h3>
+    </div>
+
+    <!-- Add this after mobile-header div -->
+    <div class="main-header">
+        <h1>LAN Chat Application</h1>
+    </div>
+
+    <!-- Login Form -->
+    <div id="username-form">
+        <div class="login-container">
+            <h2>Join Chat</h2>
+            <input type="text" id="username" placeholder="Enter your username">
+            <button onclick="joinChat()">Join</button>
+        </div>
+    </div>
+
+    <!-- Main Chat Container -->
+    <div class="container" id="chat-container" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h3>Active Users</h3>
+            <ul id="users-list"></ul>
+            <button onclick="logout()" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div id="chat-box"></div>
+            <div class="message-input">
+                <div id="reply-info" style="display: none;" class="replying-to">
+                    <div>
+                        Replying to: <span id="reply-to-text"></span>
+                        <input type="hidden" id="reply-to-data">
+                    </div>
+                    <div class="cancel-reply" onclick="cancelReply()">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+                <input type="text" id="message" placeholder="Type your message..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <div class="file-upload">
+                    <input type="file" id="file-input" class="file-upload-input" onchange="handleFileUpload(this.files)">
+                    <button onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                </div>
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this dialog for file upload -->
+    <div id="file-upload-dialog" class="file-upload-dialog" style="display: none;">
+        <h3>Share File</h3>
+        <div class="file-preview">
+            <i class="fas fa-file"></i>
+            <span id="selected-filename"></span>
+        </div>
+        <textarea id="file-message" placeholder="Add a message with your file (optional)"></textarea>
+        <div class="dialog-buttons">
+            <button onclick="cancelFileUpload()">Cancel</button>
+            <button onclick="confirmFileUpload()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUsername = localStorage.getItem('chatUsername') || '';
+
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            if (currentUsername) {
+                // Auto login with stored username
+                fetch('/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(currentUsername)}&is_refresh=true`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('username-form').style.display = 'none';
+                        document.getElementById('chat-container').style.display = 'flex';
+                        fetchMessages();
+                        fetchActiveUsers();
+                    } else {
+                        currentUsername = '';
+                        localStorage.removeItem('chatUsername');
+                        document.getElementById('username-form').style.display = 'flex';
+                    }
+                });
+            }
+        });
+
+        function joinChat() {
+            const username = document.getElementById('username').value;
+            if (username.trim()) {
+                fetch('/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(username)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        currentUsername = username;
+                        localStorage.setItem('chatUsername', username); // Save username
+                        document.getElementById('username-form').style.display = 'none';
+                        document.getElementById('chat-container').style.display = 'flex';
+                        fetchMessages();
+                        fetchActiveUsers();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            }
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value.trim();
+            const replyToData = document.getElementById('reply-to-data').value;
+            
+            if (message) {
+                const data = {
+                    message: message,
+                    username: currentUsername,
+                    replyTo: replyToData ? JSON.parse(replyToData) : null
+                };
+
+                fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        messageInput.value = '';
+                        cancelReply();
+                    }
+                });
+            }
+        }
+
+        function getFileIcon(fileType) {
+            const iconMap = {
+                'pdf': 'fas fa-file-pdf',
+                'doc': 'fas fa-file-word',
+                'docx': 'fas fa-file-word',
+                'txt': 'fas fa-file-alt',
+                'png': 'fas fa-file-image',
+                'jpg': 'fas fa-file-image',
+                'jpeg': 'fas fa-file-image',
+                'gif': 'fas fa-file-image',
+                'mp4': 'fas fa-video',
+                'webm': 'fas fa-video',
+                'avi': 'fas fa-video',
+                'mov': 'fas fa-video',
+                'mkv': 'fas fa-video',
+                '3gp': 'fas fa-video',
+                'flv': 'fas fa-video'
+            };
+            return iconMap[fileType] || 'fas fa-file';
+        }
+
+        function renderFileMessage(msg) {
+            const fileType = msg.file_type.toLowerCase();
+            let fileContent = '';
+            
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(fileType)) {
+                // Image files
+                fileContent = `
+                    <div class="file-message ${msg.username === currentUsername ? 'sent' : 'received'}">
+                        <strong>${msg.username}</strong>
+                        <div class="image-preview" onclick="openLightbox('/preview/${msg.filename}')">
+                            <img src="/preview/${msg.filename}" alt="${msg.original_filename}">
+                        </div>
+                        <div class="file-actions">
+                            <a href="/preview/${msg.filename}" class="file-btn download-btn" target="_blank">
+                                <i class="fas fa-eye"></i>
+                                <span>Open</span>
+                            </a>
+                            <a href="/download/${msg.filename}" download class="file-btn download-btn">
+                                <i class="fas fa-download"></i>
+                                <span>Download</span>
+                            </a>
+                        </div>
+                        ${msg.message ? `<div class="file-message-text">${msg.message}</div>` : ''}
+                        <div class="timestamp">${msg.timestamp}</div>
+                    </div>
+                `;
+            } else if (fileType === 'pdf') {
+                // PDF files
+                fileContent = `
+                    <div class="file-message ${msg.username === currentUsername ? 'sent' : 'received'}">
+                        <strong>${msg.username}</strong>
+                        <div class="pdf-preview" onclick="window.open('/preview/${msg.filename}', '_blank')">
+                            <i class="fas fa-file-pdf"></i>
+                            <div class="pdf-info">
+                                <div class="pdf-name">${msg.original_filename}</div>
+                                <small>Click to open PDF</small>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <a href="/preview/${msg.filename}" target="_blank" class="file-btn preview-btn">
+                                <i class="fas fa-eye"></i>
+                                <span>Open PDF</span>
+                            </a>
+                            <a href="/download/${msg.filename}" download class="file-btn download-btn">
+                                <i class="fas fa-download"></i>
+                                <span>Download</span>
+                            </a>
+                        </div>
+                        ${msg.message ? `<div class="file-message-text">${msg.message}</div>` : ''}
+                        <div class="timestamp">${msg.timestamp}</div>
+                    </div>
+                `;
+            } else if (msg.is_video) {
+                // Video files (existing video code)
+                fileContent = `
+                    <div class="file-message ${msg.username === currentUsername ? 'sent' : 'received'}">
+                        <strong>${msg.username}</strong>
+                        <div class="file-info">
+                            <i class="fas fa-video"></i>
+                            <span>${msg.original_filename}</span>
+                        </div>
+                        <div class="file-actions">
+                            <a href="/preview/${msg.filename}" target="_blank" class="file-btn preview-btn">
+                                <i class="fas fa-play"></i>
+                                <span>Watch Video</span>
+                            </a>
+                            <a href="/download/${msg.filename}" download class="file-btn download-btn">
+                                <i class="fas fa-download"></i>
+                                <span>Download</span>
+                            </a>
+                        </div>
+                        ${msg.message ? `<div class="file-message-text">${msg.message}</div>` : ''}
+                        <div class="timestamp">${msg.timestamp}</div>
+                    </div>
+                `;
+            } else {
+                // Other files
+                fileContent = `
+                    <div class="file-message ${msg.username === currentUsername ? 'sent' : 'received'}">
+                        <strong>${msg.username}</strong>
+                        <div class="file-info">
+                            <i class="${getFileIcon(fileType)}"></i>
+                            <span>${msg.original_filename}</span>
+                        </div>
+                        <div class="file-actions">
+                            <a href="/download/${msg.filename}" download class="file-btn download-btn">
+                                <i class="fas fa-download"></i>
+                                <span>Download</span>
+                            </a>
+                        </div>
+                        ${msg.message ? `<div class="file-message-text">${msg.message}</div>` : ''}
+                        <div class="timestamp">${msg.timestamp}</div>
+                    </div>
+                `;
+            }
+
+            return fileContent;
+        }
+
+        function fetchMessages() {
+            let isScrolledToBottom = true;
+            const chatBox = document.getElementById('chat-box');
+
+            // Check if user is scrolled to bottom
+            chatBox.addEventListener('scroll', () => {
+                isScrolledToBottom = Math.abs(
+                    chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop
+                ) < 10;
+            });
+
+            setInterval(() => {
+                fetch('/get_messages')
+                    .then(response => response.json())
+                    .then(messages => {
+                        const previousScrollHeight = chatBox.scrollHeight;
+                        const previousScrollTop = chatBox.scrollTop;
+                        
+                        chatBox.innerHTML = '';
+                        messages.forEach(msg => {
+                            if (msg.type === 'file') {
+                                chatBox.innerHTML += renderFileMessage(msg);
+                            } else if (msg.type === 'system') {
+                                chatBox.innerHTML += `
+                                    <div class="system-message">
+                                        ${msg.message}
+                                    </div>
+                                `;
+                            } else {
+                                // Use renderMessage function instead of direct HTML
+                                chatBox.innerHTML += renderMessage(msg);
+                            }
+                        });
+
+                        // Maintain scroll position
+                        if (isScrolledToBottom) {
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                        } else {
+                            const newScrollHeight = chatBox.scrollHeight;
+                            chatBox.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
+                        }
+                    });
+            }, 1000);
+        }
+
+        function fetchActiveUsers() {
+            setInterval(() => {
+                fetch('/get_active_users')
+                    .then(response => response.json())
+                    .then(users => {
+                        const usersList = document.getElementById('users-list');
+                        usersList.innerHTML = '';
+                        users.forEach(user => {
+                            usersList.innerHTML += `<li>${user}</li>`;
+                        });
+                    });
+            }, 5000);
+        }
+
+        function handleFileUpload(files) {
+            selectedFile = files[0];
+            if (!selectedFile) return;
+
+            document.getElementById('selected-filename').textContent = selectedFile.name;
+            document.getElementById('file-upload-dialog').style.display = 'block';
+        }
+
+        function cancelFileUpload() {
+            selectedFile = null;
+            document.getElementById('file-upload-dialog').style.display = 'none';
+            document.getElementById('file-message').value = '';
+        }
+
+        function confirmFileUpload() {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('username', currentUsername);
+            formData.append('message', document.getElementById('file-message').value);
+
+            // Create progress element
+            const progressDiv = document.createElement('div');
+            progressDiv.className = 'upload-progress';
+            progressDiv.innerHTML = `
+                <div class="upload-progress-bar"></div>
+            `;
+            document.querySelector('.message-input').appendChild(progressDiv);
+
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressDiv.querySelector('.upload-progress-bar').style.width = percentComplete + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                progressDiv.remove();
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        cancelFileUpload();
+                    } else {
+                        alert('Error uploading file: ' + response.message);
+                    }
+                }
+            };
+
+            xhr.onerror = function() {
+                progressDiv.remove();
+                alert('Error uploading file');
+            };
+
+            xhr.open('POST', '/upload_file', true);
+            xhr.send(formData);
+        }
+
+        let isRefreshing = false;
+
+        window.addEventListener('beforeunload', (e) => {
+            if (currentUsername) {
+                // Check if it's a refresh or actual page leave
+                if (e.clientY < 0 || e.clientX < 0) {  // User is leaving the page
+                    isRefreshing = false;
+                } else {  // User is refreshing
+                    isRefreshing = true;
+                }
+                
+                // Send leave request with refresh status
+                fetch('/leave', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(currentUsername)}&is_refresh=${isRefreshing}`
+                });
+            }
+        });
+
+        // Add lightbox functionality for images
+        function openLightbox(imageSrc) {
+            const lightbox = document.createElement('div');
+            lightbox.className = 'lightbox';
+            lightbox.innerHTML = `<img src="${imageSrc}">`;
+            
+            lightbox.onclick = () => {
+                lightbox.remove();
+            };
+            
+            document.body.appendChild(lightbox);
+            setTimeout(() => lightbox.classList.add('active'), 10);
+        }
+
+        function logout() {
+            if (currentUsername) {
+                fetch('/leave', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(currentUsername)}`
+                }).then(() => {
+                    currentUsername = '';
+                    localStorage.removeItem('chatUsername');
+                    document.getElementById('username-form').style.display = 'flex';
+                    document.getElementById('chat-container').style.display = 'none';
+                });
+            }
+        }
+
+        let replyingTo = null;
+
+        function renderMessage(msg) {
+            const messageClass = msg.username === currentUsername ? 'message sent' : 'message received';
+            let replyContent = '';
+            
+            if (msg.replyTo) {
+                replyContent = `
+                    <div class="reply-container">
+                        <div class="reply-header">Replying to ${msg.replyTo.username}</div>
+                        <div>${msg.replyTo.message}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="${messageClass}" data-message-id="${msg.id}">
+                    <strong>${msg.username}</strong>
+                    ${replyContent}
+                    <div>${msg.message}</div>
+                    <div class="timestamp">${msg.timestamp}</div>
+                    ${msg.username !== currentUsername ? `
+                        <div class="message-actions">
+                            <button class="reply-btn" onclick="startReply('${msg.username}', '${msg.message}', ${msg.id})">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function startReply(username, message, messageId) {
+            replyingTo = {
+                username: username,
+                message: message,
+                id: messageId
+            };
+            document.getElementById('reply-info').style.display = 'flex';
+            document.getElementById('reply-to-text').textContent = `${username}: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`;
+            document.getElementById('reply-to-data').value = JSON.stringify(replyingTo);
+            document.getElementById('message').focus();
+        }
+
+        function cancelReply() {
+            replyingTo = null;
+            document.getElementById('reply-info').style.display = 'none';
+            document.getElementById('reply-to-data').value = '';
+        }
+
+        // Add this function for sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            
+            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get sidebar toggle button
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            // Add click event to toggle button
+            sidebarToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                sidebar.classList.toggle('active');
+            });
+
+            // Close sidebar when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && 
+                    !sidebarToggle.contains(e.target) && 
+                    sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                }
+            });
+
+            // Prevent sidebar from closing when clicking inside it
+            sidebar.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+</html> 
